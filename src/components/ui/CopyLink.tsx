@@ -19,20 +19,20 @@ export default function CopyLink({ path }: { path: string }) {
   if (!fullUrl) return null
 
   return (
-    <div className="mb-8 p-5 bg-indigo-50 rounded-lg border border-indigo-100">
-      <h3 className="text-sm font-semibold text-indigo-900 mb-1">Invite your group!</h3>
-      <p className="text-xs text-indigo-700 mb-3">Copy and share this link so others can join and add their preferences.</p>
+    <div className="mb-8 p-5 bg-accent-soft/40 rounded-2xl border border-card-border">
+      <h3 className="text-sm font-semibold text-ink mb-1">Invite your group!</h3>
+      <p className="text-xs text-muted mb-3">Copy and share this link so others can join and add their preferences.</p>
       <div className="flex gap-2">
-        <input 
-          type="text" 
-          readOnly 
-          value={fullUrl} 
-          className="flex-1 rounded border border-indigo-200 p-2 text-sm text-gray-700 outline-none bg-white font-mono" 
+        <input
+          type="text"
+          readOnly
+          value={fullUrl}
+          className="flex-1 rounded-xl border border-card-border p-2 text-sm text-ink outline-none bg-white font-mono"
         />
-        <button 
+        <button
           type="button"
-          onClick={handleCopy} 
-          className="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-indigo-700 transition"
+          onClick={handleCopy}
+          className="bg-ink text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-ink/90 transition"
         >
           {copied ? 'Copied!' : 'Copy Link'}
         </button>

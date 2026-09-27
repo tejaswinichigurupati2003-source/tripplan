@@ -53,14 +53,14 @@ export function evaluateOption(
       if (option.budget_estimate > pref.value.max) {
         if (pref.is_hard_constraint) {
           is_viable = false;
-          conflict_reasons.push(`Budget exceeds max of $${pref.value.max}`);
+          conflict_reasons.push(`Budget exceeds max of ₹${pref.value.max}`);
         } else {
           score -= penaltyWeight;
-          conflict_reasons.push(`Slightly over budget target of $${pref.value.max}`);
+          conflict_reasons.push(`Slightly over budget target of ₹${pref.value.max}`);
         }
       } else {
         score += rewardWeight / 2;
-        match_reasons.push(`Within budget ($${pref.value.max})`);
+        match_reasons.push(`Within budget (₹${pref.value.max})`);
       }
     }
 

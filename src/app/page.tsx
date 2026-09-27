@@ -1,51 +1,45 @@
-import { createDecision } from './actions'
+import StartTripForm from '@/components/ui/StartTripForm'
+
+const STEPS = [
+  'Everyone answers a 5-minute private form — editable any time.',
+  'AI turns natural-language preferences into scored, ranked trip options.',
+  'See exactly why an option was recommended, then vote as a group.',
+]
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Decision Room</h1>
-        <p className="text-gray-500 mb-6">Create a new collaborative group trip decision.</p>
+    <main className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto px-6 py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="order-2 lg:order-1">
+          <span className="inline-flex items-center gap-2 rounded-full bg-accent-soft text-accent text-xs font-bold uppercase tracking-wide px-4 py-1.5 mb-6">
+            ✈ For trips that keep almost happening
+          </span>
 
-        <form action={createDecision} className="space-y-4">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">Trip Name</label>
-            <input 
-              type="text" 
-              name="title" 
-              id="title" 
-              required 
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="E.g., Summer Vacation 2026"
-            />
-          </div>
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea 
-              name="description" 
-              id="description" 
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Where are we going?"
-            />
-          </div>
-          <div>
-            <label htmlFor="creatorName" className="block text-sm font-medium text-gray-700">Your Name</label>
-            <input 
-              type="text" 
-              name="creatorName" 
-              id="creatorName" 
-              required 
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Alice"
-            />
-          </div>
-          <button 
-            type="submit" 
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Create Decision Room
-          </button>
-        </form>
+          <h1 className="font-serif text-5xl md:text-6xl leading-[1.05] text-ink mb-6">
+            The group trip that <em className="italic">actually</em> happens.
+          </h1>
+
+          <p className="text-lg text-muted leading-relaxed mb-10 max-w-lg">
+            No more polls that collapse the next day. Everyone submits budget, dates, and
+            preferences through one shared link. We score the real options against what each
+            person needs, and hand the group one clear, math-backed recommendation.
+          </p>
+
+          <ol className="space-y-4">
+            {STEPS.map((step, i) => (
+              <li key={i} className="flex items-start gap-4">
+                <span className="shrink-0 w-7 h-7 rounded-full bg-ink text-white text-sm font-semibold flex items-center justify-center mt-0.5">
+                  {i + 1}
+                </span>
+                <span className="text-ink/90 leading-snug">{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+          <StartTripForm />
+        </div>
       </div>
     </main>
   )

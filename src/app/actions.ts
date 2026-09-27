@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { parsePreferencesWithGemini, generateCandidateOptions } from '@/lib/gemini'
+import { parsePreferencesWithGemini, generateCandidateOptions, generateWhatIfOptions } from '@/lib/gemini'
 import { rankOptions, Participant, Preference, CandidateOption } from '@/lib/decision-engine'
 import { redirect } from 'next/navigation'
 
@@ -10,12 +10,16 @@ export async function createDecision(formData: FormData) {
   const title = formData.get('title') as string
   const description = formData.get('description') as string
   const creatorName = formData.get('creatorName') as string
+  const duration = formData.get('duration') as string | null
+  const inviteeNames = (formData.getAll('invitees') as string[])
+    .map((n) => n.trim())
+    .filter(Boolean)
 
   const supabase = await createClient()
 
   const { data: decision, error } = await supabase
     .from('decisions')
-    .insert([{ title, description }])
+    .insert([{ title, description, duration }])
     .select()
     .single()
 
@@ -27,7 +31,20 @@ export async function createDecision(formData: FormData) {
     .select()
     .single()
 
-  // We should set a cookie so the creator is automatically logged in 
+  // Pre-register everyone the organizer named as invitees so the group
+  // dashboard shows them immediately as "waiting", before they've joined.
+  if (inviteeNames.length > 0) {
+    const uniqueNames = inviteeNames.filter(
+      (n) => n.toLowerCase() !== creatorName.trim().toLowerCase()
+    )
+    if (uniqueNames.length > 0) {
+      await supabase
+        .from('participants')
+        .insert(uniqueNames.map((name) => ({ decision_id: decision.id, name, role: 'invitee' })))
+    }
+  }
+
+  // We should set a cookie so the creator is automatically logged in
   const cookieStore = require('next/headers').cookies
   ;(await cookieStore()).set(`participant_${decision.id}`, participant.id)
 
@@ -36,20 +53,36 @@ export async function createDecision(formData: FormData) {
 }
 
 export async function joinDecision(decisionId: string, formData: FormData) {
-  const name = formData.get('name') as string
+  const name = (formData.get('name') as string).trim()
   const supabase = await createClient()
 
-  const { data: participant, error } = await supabase
+  // If the organizer already pre-listed this name as an invitee, claim that
+  // existing slot instead of creating a duplicate participant.
+  const { data: existing } = await supabase
     .from('participants')
-    .insert([{ decision_id: decisionId, name }])
-    .select()
-    .single()
+    .select('*')
+    .eq('decision_id', decisionId)
+    .eq('has_submitted', false)
+    .ilike('name', name)
+    .limit(1)
+    .maybeSingle()
 
-  if (error) throw new Error(error.message)
+  let participant = existing
+
+  if (!participant) {
+    const { data: created, error } = await supabase
+      .from('participants')
+      .insert([{ decision_id: decisionId, name }])
+      .select()
+      .single()
+
+    if (error) throw new Error(error.message)
+    participant = created
+  }
 
   const cookieStore = require('next/headers').cookies
   ;(await cookieStore()).set(`participant_${decisionId}`, participant.id)
-  
+
   revalidatePath(`/decisions/${decisionId}`)
 }
 
@@ -172,6 +205,33 @@ export async function generateRecommendations(decisionId: string) {
 
   // Complete status
   await supabase.from('decisions').update({ status: 'scoring' }).eq('id', decisionId)
+
+  // 5. "What-if" simulator: a few AI options that bend one or two hard
+  // constraints slightly, shown separately below the real recommendations.
+  // Best-effort only — if this fails, the main recommendations are unaffected.
+  try {
+    const whatIfOptions = await generateWhatIfOptions(participants, prefsData)
+    if (Array.isArray(whatIfOptions) && whatIfOptions.length > 0) {
+      await supabase.from('candidate_options').delete().eq('decision_id', decisionId).eq('is_whatif', true)
+
+      const whatIfToInsert = whatIfOptions.map((o: any) => ({
+        decision_id: decisionId,
+        title: o.title,
+        description: o.description || '',
+        budget_estimate: o.budget_estimate,
+        start_date: o.start_date,
+        end_date: o.end_date,
+        activities: o.activities || [],
+        flex_notes: o.flex_notes || [],
+        is_whatif: true
+      }))
+
+      const { error: whatIfError } = await supabase.from('candidate_options').insert(whatIfToInsert)
+      if (whatIfError) console.error("Failed to save what-if options:", whatIfError.message)
+    }
+  } catch (err) {
+    console.error("What-if generation failed, skipping:", err)
+  }
 
   revalidatePath(`/decisions/${decisionId}`)
 }
